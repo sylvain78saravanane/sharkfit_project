@@ -1,0 +1,7 @@
+POST http://localhost:8080/api/posts
+Content-Type: application/json
+
+{
+  "name":"test Avis",
+  "content":"ceci est un test pour décrire une description"
+}

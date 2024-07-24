@@ -1,10 +1,13 @@
 package com.sharkfit.sharkfit.config;
 
+import com.sharkfit.sharkfit.entity.Country;
 import com.sharkfit.sharkfit.entity.Product;
 import com.sharkfit.sharkfit.entity.ProductCategory;
+import com.sharkfit.sharkfit.entity.State;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.metamodel.EntityType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
@@ -18,30 +21,37 @@ import java.util.Set;
 @Configuration
 public class MyDataRestConfig implements RepositoryRestConfigurer {
 
+    @Value("${allowed.origins}")
+    private String[] theAllowedOrigins;
     private EntityManager entityManager;
 
     @Autowired
-    public MyDataRestConfig(EntityManager theEntityManager) {
+    public MyDataRestConfig(EntityManager theEntityManager){
         entityManager = theEntityManager;
     }
 
     @Override
     public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
-        RepositoryRestConfigurer.super.configureRepositoryRestConfiguration(config, cors);
 
-        HttpMethod[] theUnsupportedActions = {HttpMethod.PUT, HttpMethod.POST, HttpMethod.DELETE};
+        HttpMethod[] theUnsupportedActions ={HttpMethod.PUT, HttpMethod.POST, HttpMethod.DELETE, HttpMethod.PATCH};
 
-        config.getExposureConfiguration()
-                .forDomainType(Product.class)
-                .withItemExposure(((metdata, httpMethods) -> httpMethods.disable(theUnsupportedActions)))
-                .withCollectionExposure((metdata, httpMethods) -> httpMethods.disable(theUnsupportedActions));
-
-        config.getExposureConfiguration()
-                .forDomainType(ProductCategory.class)
-                .withItemExposure(((metdata, httpMethods) -> httpMethods.disable(theUnsupportedActions)))
-                .withCollectionExposure((metdata, httpMethods) -> httpMethods.disable(theUnsupportedActions));
+        disableHttpMethods(Product.class, config, theUnsupportedActions);
+        disableHttpMethods(ProductCategory.class, config, theUnsupportedActions);
+        disableHttpMethods(Country.class, config, theUnsupportedActions);
+        disableHttpMethods(State.class, config, theUnsupportedActions);
 
         exposeIds(config);
+
+        // configure cors mapping
+        cors.addMapping(config.getBasePath() + "/**").allowedOrigins(theAllowedOrigins);
+
+    }
+
+    private static void disableHttpMethods(Class theClass, RepositoryRestConfiguration config, HttpMethod[] theUnsupportedActions) {
+        config.getExposureConfiguration()
+                .forDomainType(theClass)
+                .withItemExposure((metdata, httpMethods) -> httpMethods.disable(theUnsupportedActions))
+                .withCollectionExposure((metdata, httpMethods) -> httpMethods.disable(theUnsupportedActions));
     }
 
     private void exposeIds(RepositoryRestConfiguration config) {
@@ -49,7 +59,7 @@ public class MyDataRestConfig implements RepositoryRestConfigurer {
 
         List<Class> entityClasses = new ArrayList<>();
 
-        for (EntityType tempEntityType : entities) {
+        for (EntityType tempEntityType : entities){
             entityClasses.add(tempEntityType.getJavaType());
         }
 

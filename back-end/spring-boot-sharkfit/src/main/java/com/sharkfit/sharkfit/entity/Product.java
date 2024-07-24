@@ -16,13 +16,12 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     @Column(name = "id")
     private Long id;
 
 
     @ManyToOne
-    @JoinColumn(name="category_id", nullable = false, unique = true)
+    @JoinColumn(name="category_id", nullable = false)
     private ProductCategory category;
 
     @Column(name = "code_produit")
